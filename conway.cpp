@@ -18,6 +18,7 @@ int i;
 
 bool run = false;
 bool settings = true;
+int activeField = 0;
 
 sf::Font font("Arial.TTF");
 sf::Text RowsT(font);
@@ -145,7 +146,13 @@ int main(){
             if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Escape){
                     settings = !settings;
-                    run = false;
+                    if (settings == true)
+                    	run = false;
+                    if (settings == false)
+                    	run = true;
+                activeField = 0;
+                RowsT.setFillColor(sf::Color::White);
+                ColsT.setFillColor(sf::Color::White);
                 }
 
             //pausar
@@ -185,6 +192,33 @@ int main(){
                 window.setView(sf::View(visibleArea));
             }
 
+            //grid & row size
+			if (const auto* textEntered = event->getIf<sf::Event::TextEntered>()) {
+                if (settings && activeField > 0) {
+
+                    char32_t unicode = textEntered->unicode;
+            
+                    if (unicode == 8) {
+                        if (activeField == 1) Rows /= 10;
+                        if (activeField == 2) Cols /= 10;
+                    } 
+
+                    else if (unicode >= 48 && unicode <= 57) {
+                        int digit = unicode - 48;
+                        if (activeField == 1) Rows = (Rows * 10) + digit;
+                        if (activeField == 2) Cols = (Cols * 10) + digit;
+                    }
+
+                    if (Rows > 512) Rows = 512;
+                    if (Cols > 512) Cols = 512;
+            
+                    RowsT.setString("Rows: " + std::to_string(Rows));
+                    ColsT.setString("Cols: " + std::to_string(Cols));
+                    grid = std::vector<std::vector<uint8_t>>(Rows, std::vector<uint8_t>(Cols, 0));
+                    gridi = std::vector<std::vector<int>>(Rows, std::vector<int>(Cols, 0));
+                }
+            }
+
             //cell dead/alive
             if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>())
                 if (mouseButtonPressed->button == sf::Mouse::Button::Left){
@@ -195,6 +229,20 @@ int main(){
                     }
                     if(settings){
                         sf::Vector2f pos(mouseButtonPressed->position.x, mouseButtonPressed->position.y);
+
+                        if (RowsT.getGlobalBounds().contains(pos)) {
+                        	 activeField = 1;
+                             RowsT.setFillColor(sf::Color::Yellow);
+                             ColsT.setFillColor(sf::Color::White); 
+                        } else if (ColsT.getGlobalBounds().contains(pos)) {
+                       		activeField = 2;
+                            ColsT.setFillColor(sf::Color::Yellow);
+                            RowsT.setFillColor(sf::Color::White);
+                        } else {
+                        	activeField = 0;
+                        	RowsT.setFillColor(sf::Color::White);
+                        	ColsT.setFillColor(sf::Color::White);
+                        }
                         if(cornersT.getGlobalBounds().contains(pos)){
                             corners = !corners;
                             cornersT.setString("Corners: " + std::string(corners ? "On" : "Off"));
@@ -273,14 +321,15 @@ int main(){
         
         window.clear();
 
+        sf::RectangleShape cell(sf::Vector2f(width, height));
+        cell.setFillColor(sf::Color::White);
+
         for(int row=0; row < Rows; row++){
             for(int col=0; col < Cols; col++){
                 if(grid[row][col]){
-                    sf::RectangleShape cell(sf::Vector2f(width, height));
 
                     cell.setPosition(sf::Vector2f(col * width, row * height));
 
-                    cell.setFillColor(sf::Color::White);
                     window.draw(cell);
                 }
             }

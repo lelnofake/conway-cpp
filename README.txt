@@ -25,5 +25,4 @@ g++ conway.cpp -o conway -lsfml-graphics -lsfml-window -lsfml-system
 ./conway
 
 ## Notes
-- You need a font file named **`Arial.TTF`** in the same directory as the executable.
 - This is a learning project, not meant for production use.
